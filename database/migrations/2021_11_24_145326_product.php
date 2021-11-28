@@ -15,11 +15,13 @@ class Product extends Migration
     {
         schema::create('products', function(Blueprint $table){
             $table->id();
-            $table->foreignId('boutique_id')->constrained()->onUpdate('cascade')->onDelete('cascade');
+            $table->foreignId('amazon_id')->constrained()->onDelete('cascade')->onUpdate('cascade');
             $table->string('name');
             $table->text('description');
             $table->string('image');
             $table->timestamps();
+            /*$table->foreign('boutique_id')->references('id')->on('amazons')->onUpdate('cascade')->onDelete('cascade');
+            $table->bigInteger('boutique_id')->unsigned();*/
         });
     }
 

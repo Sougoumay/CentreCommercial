@@ -1,4 +1,4 @@
-@extends('layouts.adminPrincipale')
+@extends('layouts.layoutsAuthentification')
 @section('main')
     <div class="login-area">
         <div class="container">
@@ -9,34 +9,43 @@
                         <h4>Sign up</h4>
                         <p>Hello there, Sign up and Join with Us</p>
                     </div>
+                    @if($errors->any())
+                        <div class="alert alert-danger">
+                            <ul>
+                                @foreach($errors->all() as $error)
+                                    <li >{{$error}}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
                     <div class="login-form-body">
                         <div class="form-gp">
                             <label for="exampleInputName1">Name</label>
-                            <input type="text" id="exampleInputName1" name="name">
+                            <input type="text" id="exampleInputName1" value="{{old('name')}}" name="name">
                             <i class="ti-user"></i>
                             <div class="text-danger"></div>
                         </div>
                         <div class="form-gp">
                             <label for="exampleInputName1">Boutique</label>
-                            <input type="text" id="exampleInputName1" name="boutique">
+                            <input type="text" id="exampleInputName1" value="{{old('boutique')}}" name="boutique">
                             <i class="ti-user"></i>
                             <div class="text-danger"></div>
                         </div>
                         <div class="form-gp">
                             <label for="exampleInputName1">Description</label>
-                            <input type="text" id="exampleInputName1" name="description">
+                            <input type="text" id="exampleInputName1" value="{{old('description')}}" name="description">
                             <i class="ti-user"></i>
                             <div class="text-danger"></div>
                         </div>
                         <div class="form-gp">
                             <label for="exampleInputEmail1">Email address</label>
-                            <input type="email" id="exampleInputEmail1" name="email">
+                            <input type="email" id="exampleInputEmail1" value="{{old('email')}}" name="email">
                             <i class="ti-email"></i>
                             <div class="text-danger"></div>
                         </div>
                         <div class="form-gp">
                             <label for="exampleInputPassword1">Password</label>
-                            <input type="password" id="exampleInputPassword1" name="password">
+                            <input type="password" id="exampleInputPassword1" value="{{old('password')}}" name="password">
                             <i class="ti-lock"></i>
                             <div class="text-danger"></div>
                         </div>

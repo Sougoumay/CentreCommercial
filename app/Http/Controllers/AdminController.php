@@ -9,6 +9,8 @@ use App\Models\Amazon;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 
 class AdminController extends Controller
@@ -16,7 +18,7 @@ class AdminController extends Controller
     // Debut des fonctions utilisables par l'administrateur
     public function showUser()
     {
-        $users = User::get();
+        $users = User::withTrashed()->get();
         return view('Admin.showUser',compact('users'));
     }
 
@@ -28,78 +30,102 @@ class AdminController extends Controller
             'description'=>'string|required|min:10|max:100'
         ]);
 
-        $data = User::create([
-            'name'=>$request->get('name'),
-            'boutique'=>$request->get('boutique'),
-            'description'=>$request->get('description'),
-            'email'=>$request->get('email'),
-            'password'=>$request->get('password')
-        ]);
+        /***
+         * La transaction permet d'assurer la totalite du processus, au cas d'une erreur dans le processus
+         * toutes les donnees precedentes seront de la base de donnees
+         */
 
-        $name = $data->name;
-        $email = $data->email;
-        $body = [];
-        $mail_data = array('body',$body);
-        Mail::send('mail', $mail_data, function($query) use ($name,$email){
-           $query->to($name,$email)->subject('welcome');
-           $query->from(env('MAIL_FROM_ADRESS','Admin'));
+        DB::transaction(function() use ($request){
+            $data = User::create([
+                'name'=>$request->get('name'),
+                'email'=>$request->get('email'),
+                'password'=>Hash::make($request->get('password'))
+            ]);
+
+            // TODO:: Il faut envoyer le mail avec le nom de la personne
+
+            $name = $data->name;
+            $email = $data->email;
+            $body = [];
+            $mail_data = array('body',$body);
+            Mail::send('mail', $mail_data, function($query) use ($name,$email){
+                $query->to($email,$name)->subject('welcome');
+                $query->from('elidjaihamid@gmail.com');
+            });
+
+            /*$request->user()->amazons()->create($request->all());
+            cette simple ligne permet de creer les
+            donnees de la boutique a condition que les colonnes de la boutique et de la table user n'aient
+            les memes noms, a l'exemple de name de la boutique et de user*/
+
+            $boutique = Amazon::create([
+                'name'=>$request->get('boutique'),
+                'description'=>$request->get('description'),
+                'user_id'=>$data->id,
+                'status'=>'pending'
+            ]);
+
+            $data->delete();
         });
 
-        $data->delete();
-
-        $boutique = Amazon::create([
-           'name'=>'boutique',
-            'description'=>'description',
-            'user_id'=>$data,
-            'status'=>'pending'
-        ]);
     }
 
-    public function updateStatusShowPost($boutique)
+    public function updateStatusShowPost($id)
     {
-        $boutique_id = Amazon::find($boutique);
+        $boutique_id = Amazon::find($id);
         $accepted = $boutique_id->update([
             'status'=>'accepted'
         ]);
 
         if($accepted){
-            User::find($boutique->user_id)->update([
-                'deleted_at'=>null
-            ]);
+            //dd(User::withTrashed()->find($boutique_id->user_id));
+            // la fonction restore() permet de mettre a jour la valeur de softDeletes
+            $admin = User::withTrashed()->find($boutique_id->user_id)->restore();
         }
 
-        $name = User::user()->name;
-        $email = User::user()->email;
+        $name = $boutique_id->users->name;
+        $email = $boutique_id->users->email;
         $body = [];
         $mail_data = array('body',$body);
         Mail::send('mail', $mail_data, function($query) use ($name,$email){
-            $query->to($name,$email)->subject('welcome');
-            $query->from(env('MAIL_FROM_ADRESS','Admin'));
+            $query->to($email,$name)->subject('welcome');
+            $query->from('elidjaihamid@gmail.com');
         });
 
-        return view('showUser');
+        return back();
     }
 
     public function showUserById($id){
         $users = User::find($id);
-        return view('showUserById',compact('users'));
+        return view('admin.showUserById',compact('users'));
     }
 
-    public function addproduct(GestionRequest $gestionRequest)
+    public function addProductView()
     {
-        $photo = $gestionRequest->file('image');
+        return view('User.addProduct');
+    }
+
+    public function addProduct(Request $request)
+    {
+        $validation = $request->validate([
+            'name'=>'string|required|min:3',
+            'description'=>'string|required|min:10|max:100',
+            'image'=>'image|required'
+        ]);
+
+        $photo = $request->file('image');
         if($photo)
         {
             $photoName = uniqid('produit_').'.'.$photo->getClientOriginalExtension();
             $photo->move(UploadsFile::getUploadsPath('profile_photo'),$photoName);
             $article = Product::create([
-                'name'=>$gestionRequest->get('name'),
-                'description'=>$gestionRequest->get('description'),
+                'name'=>$request->get('name'),
+                'description'=>$request->get('description'),
                 'image'=>$photoName,
-                'boutique_id'=>Auth::user()->boutique->id,
+                'amazon_id'=>Auth::user()->amazons->id,
             ]);
         }
-        return view('User.addProduct');
+        return back();
     }
 
     public function deleteUser($id)
@@ -118,16 +144,18 @@ class AdminController extends Controller
 
     public function adminShowProduct()
     {
+        //$products = Product::with('amazons')->get(); Cette commande ameliore la performance de la base
         $products = Product::get();
         return view('Admin.showProduct',compact('products'));
     }
 
 
 
-    public function userShowProduct($boutique_id)
+    public function userShowProduct()
     {
-        $produits = Product::where('boutique_id',$boutique_id)->first();
-        return view('User.showProduit','produits');
+        $boutique_id = Auth::user()->amazons->id;
+        $produits = Product::where('amazon_id',$boutique_id)->get();
+        return view('User.showProduct',compact('produits'));
     }
 
 }

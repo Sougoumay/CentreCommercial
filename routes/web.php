@@ -28,7 +28,7 @@ Route::group(['prefix'=>'/admin','middleware'=>'IsAdmin'], function(){
     Route::get('/show/product',[AdminController::class,'adminShowProduct'])->name('admin.showProduct');
     Route::get('/show/user',[AdminController::class,'showUser'])->name('admin.showUser');
     Route::get('/show/userById/{id}',[AdminController::class,'showUserById'])->name('admin.showUserById')->where(['id'=>'[0-9]+']);
-    Route::post('/show/statusPost/{id}',[AdminController::class,'updateStatusShowGetPost'])->name('admin.statuspost')->where(['id'=>'[0-9]+']);
+    Route::get('/show/statusPost/{id}',[AdminController::class,'updateStatusShowPost'])->name('admin.statuspost')->where(['id'=>'[0-9]+']);
     Route::get('/delete/user/{id}',[AdminController::class,'deleteUser'])->name('admin.deleteUser')->where(['id'=>'[0-9]+']);
     Route::get('/delete/product/{id}',[AdminController::class,'deleteProduct'])->name('admin.deleteProduct')->where(['id'=>'[0-9]+']);
     Route::view('/principale','layouts.adminPrincipale');
@@ -36,7 +36,9 @@ Route::group(['prefix'=>'/admin','middleware'=>'IsAdmin'], function(){
 
 Route::group(['prefix'=>'/user','middleware'=>'IsUser'], function(){
    Route::get('/show/product',[AdminController::class,'userShowProduct'])->name('user.showProduct');
-   Route::get('/add/product',[AdminController::class,'addProduct'])->name('user.addProduct');
+   Route::post('/add/product',[AdminController::class,'addProduct'])->name('user.addProduct');
+   Route::get('/add/productView',[AdminController::class,'addProductView'])->name('user.addProductView');
+    Route::get('/delete/product/{id}',[AdminController::class,'deleteProduct'])->name('user.deleteProduct')->where(['id'=>'[0-9]+']);
 });
 
 Route::view('/register','register')->name('register');

@@ -17,7 +17,7 @@ class IsUser
      */
     public function handle(Request $request, Closure $next)
     {
-        if(Auth::check() && Auth::user()->status==="pending"){
+        if(Auth::check() && (Auth::user()->amazons->status === "accepted")){
             return $next($request);
         }
         return abort(403);

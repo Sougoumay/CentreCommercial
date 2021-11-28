@@ -10,13 +10,12 @@ class Amazon extends Model
     use HasFactory;
 
     protected $fillable = [
-        'name',
-        'description'
+        'name', 'description', 'user_id', 'status'
     ];
 
     public function users()
     {
-        return $this->belongsTo(User::class,'user_id','id');
+        return $this->belongsTo(User::class,'user_id');
     }
 
     public function products()

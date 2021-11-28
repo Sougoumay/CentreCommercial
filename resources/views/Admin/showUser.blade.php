@@ -1,7 +1,7 @@
 @extends('layouts.adminPrincipale')
 @section('main')
     <!-- basic table start -->
-    <div class="col-lg-6 mt-5">
+    <div class="col-lg-12 mt-5">
         <div class="card">
             <div class="card-body">
                 <h4 class="header-title">Basic Table</h4>
@@ -25,8 +25,8 @@
                                         <td>{{$user->name}}</td>
                                         <td>{{$user->email}}</td>
                                         <td>{{$user->boutique}}</td>
-                                        <td>{{$user->status}}</td>
-                                        <td ><a href="{{route('admin.showUserById',$user->id)}}" class="btn btn-primary">Show</a></td><td ><a href="{{route('updateStatusShowGetPost',$user->id)}}" class="btn btn-warning">Edit</a></td><td ><a href="{{route('admin.deleteUser',$user->id)}}" onclick="return confirm('Are you sure to delete this data?')" class="btn btn-danger">Delete</a></td>
+                                        <td>{{$user->amazons->status}}</td>
+                                        <td ><a href="{{route('admin.showUserById',$user->id)}}" class="btn btn-primary">Show</a></td><td ><a href="{{route('admin.statuspost',$user->amazons->id)}}" class="btn btn-warning">Edit</a></td><td ><a href="{{route('admin.deleteUser',$user->id)}}" onclick="return confirm('Are you sure to delete this data?')" class="btn btn-danger">Delete</a></td>
                                     </tr>
                                 @endforeach
 

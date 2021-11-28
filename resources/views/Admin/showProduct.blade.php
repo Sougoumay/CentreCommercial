@@ -1,7 +1,7 @@
 @extends('layouts.adminPrincipale')
 @section('main')
     <!-- basic table start -->
-    <div class="col-lg-6 mt-5">
+    <div class="col-lg-12 mt-5">
         <div class="card">
             <div class="card-body">
                 <h4 class="header-title">Basic Table</h4>
@@ -22,11 +22,11 @@
                                 @foreach($products as $product)
                                         <tr>
                                             <th>{{$product->id}}</th>
-                                            <td>{{$product->id}}</td>
-                                            <td>{{$product->id}}</td>
-                                            <td>{{$product->id}}</td>
-                                            <td>{{$product->id}}</td>
-                                            <td ><a href="{{route('deleteProduct',$product->id)}}" onclick="return confirm('Are you sure to delete this data?')" class="btn btn-danger">Delete</a></td>
+                                            <td>{{$product->amazons->name}}</td>
+                                            <td>{{$product->name}}</td>
+                                            <td><img width="50" src="{{asset('/uploads/profile').'/'.$product->image}}" /></td>
+                                            <td>{{$product->description}}</td>
+                                            <td ><a href="{{route('admin.deleteProduct',$product->id)}}" onclick="return confirm('Are you sure to delete this data?')" class="btn btn-danger">Delete</a></td>
                                         </tr>
                                 @endforeach
                             </tbody>

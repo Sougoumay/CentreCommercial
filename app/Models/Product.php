@@ -9,9 +9,9 @@ class Product extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name','description','image'];
+    protected $fillable = ['name','description','image', 'amazon_id'];
     public function amazons()
     {
-        return $this->belongsTo(Amazon::class,'boutique_id','id');
+        return $this->belongsTo(Amazon::class,'amazon_id');
     }
 }
