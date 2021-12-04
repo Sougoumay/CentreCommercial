@@ -20,6 +20,6 @@ class Amazon extends Model
 
     public function products()
     {
-        return $this->hasMany(Product::class,'boutique_id','id');
+        return $this->hasMany(Product::class,'amazon_id','id');
     }
 }

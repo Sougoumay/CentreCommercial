@@ -2,8 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\AmazonsExport;
+use App\Exports\ProductsExport;
+use App\Exports\UserProductExport;
+use App\Exports\UsersExport;
 use App\Helpers\UploadsFile;
 use App\Http\Request\GestionRequest;
+use App\Imports\AmazonsImport;
+use App\Imports\ProductsImport;
+use App\Imports\UsersImport;
 use App\Models\Product;
 use App\Models\Amazon;
 use App\Models\User;
@@ -12,6 +19,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
+use Maatwebsite\Excel\Facades;
+use Maatwebsite\Excel\Facades\Excel;
 
 class AdminController extends Controller
 {
@@ -19,15 +28,15 @@ class AdminController extends Controller
     public function showUser()
     {
         $users = User::withTrashed()->get();
-        return view('Admin.showUser',compact('users'));
+        return view('Admin.showUser', compact('users'));
     }
 
     public function createUser(Request $request)
     {
         $validation = $request->validate([
-            'name'=>'string|required|min:3',
-            'boutique'=>'string|required|min:3',
-            'description'=>'string|required|min:10|max:100'
+            'name' => 'string|required|min:3',
+            'boutique' => 'string|required|min:3',
+            'description' => 'string|required|min:10|max:100'
         ]);
 
         /***
@@ -35,11 +44,11 @@ class AdminController extends Controller
          * toutes les donnees precedentes seront de la base de donnees
          */
 
-        DB::transaction(function() use ($request){
+        DB::transaction(function () use ($request) {
             $data = User::create([
-                'name'=>$request->get('name'),
-                'email'=>$request->get('email'),
-                'password'=>Hash::make($request->get('password'))
+                'name' => $request->get('name'),
+                'email' => $request->get('email'),
+                'password' => Hash::make($request->get('password'))
             ]);
 
             // TODO:: Il faut envoyer le mail avec le nom de la personne
@@ -47,9 +56,9 @@ class AdminController extends Controller
             $name = $data->name;
             $email = $data->email;
             $body = [];
-            $mail_data = array('body',$body);
-            Mail::send('mail', $mail_data, function($query) use ($name,$email){
-                $query->to($email,$name)->subject('welcome');
+            $mail_data = array('body', $body);
+            Mail::send('mail', $mail_data, function ($query) use ($name, $email) {
+                $query->to($email, $name)->subject('welcome');
                 $query->from('elidjaihamid@gmail.com');
             });
 
@@ -59,10 +68,10 @@ class AdminController extends Controller
             les memes noms, a l'exemple de name de la boutique et de user*/
 
             $boutique = Amazon::create([
-                'name'=>$request->get('boutique'),
-                'description'=>$request->get('description'),
-                'user_id'=>$data->id,
-                'status'=>'pending'
+                'name' => $request->get('boutique'),
+                'description' => $request->get('description'),
+                'user_id' => $data->id,
+                'status' => 'pending'
             ]);
 
             $data->delete();
@@ -74,10 +83,10 @@ class AdminController extends Controller
     {
         $boutique_id = Amazon::find($id);
         $accepted = $boutique_id->update([
-            'status'=>'accepted'
+            'status' => 'accepted'
         ]);
 
-        if($accepted){
+        if ($accepted) {
             //dd(User::withTrashed()->find($boutique_id->user_id));
             // la fonction restore() permet de mettre a jour la valeur de softDeletes
             $admin = User::withTrashed()->find($boutique_id->user_id)->restore();
@@ -86,18 +95,19 @@ class AdminController extends Controller
         $name = $boutique_id->users->name;
         $email = $boutique_id->users->email;
         $body = [];
-        $mail_data = array('body',$body);
-        Mail::send('mail', $mail_data, function($query) use ($name,$email){
-            $query->to($email,$name)->subject('welcome');
+        $mail_data = array('body', $body);
+        Mail::send('mail', $mail_data, function ($query) use ($name, $email) {
+            $query->to($email, $name)->subject('welcome');
             $query->from('elidjaihamid@gmail.com');
         });
 
         return back();
     }
 
-    public function showUserById($id){
+    public function showUserById($id)
+    {
         $users = User::find($id);
-        return view('admin.showUserById',compact('users'));
+        return view('admin.showUserById', compact('users'));
     }
 
     public function addProductView()
@@ -108,21 +118,20 @@ class AdminController extends Controller
     public function addProduct(Request $request)
     {
         $validation = $request->validate([
-            'name'=>'string|required|min:3',
-            'description'=>'string|required|min:10|max:100',
-            'image'=>'image|required'
+            'name' => 'string|required|min:3',
+            'description' => 'string|required|min:10|max:100',
+            'image' => 'image|required'
         ]);
 
         $photo = $request->file('image');
-        if($photo)
-        {
-            $photoName = uniqid('produit_').'.'.$photo->getClientOriginalExtension();
-            $photo->move(UploadsFile::getUploadsPath('profile_photo'),$photoName);
+        if ($photo) {
+            $photoName = uniqid('produit_') . '.' . $photo->getClientOriginalExtension();
+            $photo->move(UploadsFile::getUploadsPath('profile_photo'), $photoName);
             $article = Product::create([
-                'name'=>$request->get('name'),
-                'description'=>$request->get('description'),
-                'image'=>$photoName,
-                'amazon_id'=>Auth::user()->amazons->id,
+                'name' => $request->get('name'),
+                'description' => $request->get('description'),
+                'image' => $photoName,
+                'amazon_id' => Auth::user()->amazons->id,
             ]);
         }
         return back();
@@ -146,16 +155,59 @@ class AdminController extends Controller
     {
         //$products = Product::with('amazons')->get(); Cette commande ameliore la performance de la base
         $products = Product::get();
-        return view('Admin.showProduct',compact('products'));
+        return view('Admin.showProduct', compact('products'));
     }
-
 
 
     public function userShowProduct()
     {
         $boutique_id = Auth::user()->amazons->id;
-        $produits = Product::where('amazon_id',$boutique_id)->get();
-        return view('User.showProduct',compact('produits'));
+        $produits = Product::where('amazon_id', $boutique_id)->get();
+        return view('User.showProduct', compact('produits'));
+    }
+
+    public function createUserByExcelImport(Request $request)
+    {
+        Excel::import(new UsersImport, $request->file('excel'));
+        return back();
+    }
+
+    public function exportUserByExcel()
+    {
+        //return Excel::download(new UsersImport,'users.xlsx');
+        //return (new UsersExport)->download('users.xlsx');
+        return new UsersExport;
+    }
+
+    public function createProductByExcelImport(Request $request)
+    {
+        Excel::import(new ProductsImport, $request->file('excel'));
+        return back();
+    }
+
+    public function exportProductByExcel()
+    {
+        //return Excel::download(new UsersImport,'users.xlsx');
+        //return (new UsersExport)->download('users.xlsx');
+        return Excel::download(new ProductsExport,'produit.xlsx');
+    }
+
+    public function createAmazonByExcelImport(Request $request)
+    {
+        Excel::import(new AmazonsImport, $request->file('excel'));
+        return back();
+    }
+
+    public function exportAmazonByExcel()
+    {
+        //return Excel::download(new UsersImport,'users.xlsx');
+        //return (new UsersExport)->download('users.xlsx');
+        return Excel::download(new AmazonsExport,'boutiques.xlsx');
+    }
+
+    public function productDaysGreatThat50User()
+    {
+        return Excel::download(new UserProductExport, 'utilisateurs.xlsx');
     }
 
 }
